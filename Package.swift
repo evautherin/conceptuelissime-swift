@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "Conceptuelissime",
+    name: "conceptuelissime-swift",
     platforms: [
         .iOS(.v18)
     ],
