@@ -14,11 +14,19 @@ let package = Package(
             name: "Conceptuelissime",
             targets: ["Conceptuelissime"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/apple/swift-async-algorithms.git", .upToNextMajor(from: "1.0.3")),
+    ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "Conceptuelissime"),
+            name: "Conceptuelissime",
+            dependencies: [
+                .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
+            ],
+
+        ),
         .testTarget(
             name: "ConceptuelissimeTests",
             dependencies: ["Conceptuelissime"]
