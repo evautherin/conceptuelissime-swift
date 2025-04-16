@@ -33,6 +33,7 @@ public struct ActivityMutations<Attributes>: SendableAsyncSequence
     }
     
     nonisolated public func makeAsyncIterator() -> AsyncIterator {
-        AsyncIterator(stateIterator: stateUpdates.makeAsyncIterator())
+        print("ActivityMutations makeAsyncIterator")
+        return AsyncIterator(stateIterator: stateUpdates.makeAsyncIterator())
     }
 }
