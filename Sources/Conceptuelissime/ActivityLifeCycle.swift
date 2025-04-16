@@ -87,10 +87,13 @@ extension ActivityLifeCycle {
     private var mutationsState: State {
         .mutations(Task {
             print("Mutations task started")
-            for try await mutation in ActivityMutations<Attributes>() {
-                print("Mutation is \(mutation)")
-                activity?.mutate(mutation)
+            for try await mutation in Attributes.ContentState.liveUpdates() {
+                print("Location is \(mutation)")
             }
+//            for try await mutation in ActivityMutations<Attributes>() {
+//                print("Mutation is \(mutation)")
+//                activity?.mutate(mutation)
+//            }
         })
     }
 }
