@@ -25,10 +25,12 @@ public actor ActivityLifeCycle<Attributes>
             pushType: nil
         )
         self.activity = activity
+        print("Activity is \(activity)")
     }
     
     public static func proceed(_ attributes: Attributes) async throws {
         let lifeCycle = try await ActivityLifeCycle(attributes)
+        print("Life cycle is \(lifeCycle)")
         try await lifeCycle.complete()
     }
 }
@@ -51,13 +53,15 @@ extension ActivityLifeCycle {
         
         let cycleStates = activity.activityStateUpdates
             .map { observedState -> Action in
-                switch observedState {
+                print("Observed state is \(observedState)")
+                return switch observedState {
                 case .active, .stale: .run
                 case .ended, .dismissed: .stop
                 @unknown default: .stop
                 }
             }
             .reductions(into: State.initial) { (state, action) in
+                print("Action is \(action)")
                 switch (state, action) {
                 case (.initial, .stop), (.mutations(_), .run), (.completed, _):
                     break
@@ -72,6 +76,7 @@ extension ActivityLifeCycle {
             }
         
         waitingCompletion: for await state in cycleStates {
+            print("Cycle state is \(state)")
             switch state {
             case .completed: break waitingCompletion
             default: break
@@ -81,7 +86,9 @@ extension ActivityLifeCycle {
     
     private var mutationsState: State {
         .mutations(Task {
+            print("Mutations task started")
             for try await mutation in ActivityMutations<Attributes>() {
+                print("Mutation is \(mutation)")
                 activity?.mutate(mutation)
             }
         })
