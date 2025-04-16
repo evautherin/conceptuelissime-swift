@@ -26,7 +26,9 @@ public struct ActivityMutations<Attributes>: SendableAsyncSequence
         var stateIterator: any AsyncIteratorProtocol
         
         mutating public func next() async throws -> Element? {
-            try await (stateIterator.next() as? State)?.activityMutation
+            let mutation = try await (stateIterator.next() as? State)?.activityMutation
+            print("next mutation is \(mutation.debugDescription)")
+            return mutation
         }
     }
     
