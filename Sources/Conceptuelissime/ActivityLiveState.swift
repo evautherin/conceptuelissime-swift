@@ -12,6 +12,7 @@ public protocol ActivityLiveState: ActivityState {
 
 extension Optional: ActivityLiveState where Wrapped: ActivityLiveState {
     public static func liveUpdates() -> any SendableAsyncSequence {
-        Wrapped.liveUpdates()
+        print("Optional liveUpdates")
+        return Wrapped.liveUpdates()
     }
 }
