@@ -7,6 +7,7 @@
 
 import Foundation
 import ActivityKit
+import CoreLocation
 
 
 public actor ActivityLifeCycle<Attributes>
@@ -87,7 +88,7 @@ extension ActivityLifeCycle {
     private var mutationsState: State {
         .mutations(Task {
             print("Mutations task started")
-            for try await mutation in Attributes.ContentState.liveUpdates() {
+            for try await mutation in CLLocationUpdate.liveUpdates() {
                 print("Location is \(mutation)")
             }
 //            for try await mutation in ActivityMutations<Attributes>() {
