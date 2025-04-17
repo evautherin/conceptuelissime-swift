@@ -20,6 +20,7 @@ extension ActivityState {
     }
     
     public var activityUpdate: ActivityUpdate {
+        print("ActivityState.activityUpdate")
         (activityContent, .none, .none)
     }
 }
