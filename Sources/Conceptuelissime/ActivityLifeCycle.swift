@@ -91,6 +91,7 @@ extension ActivityLifeCycle {
             for try await element in Attributes.ContentState.liveUpdates() {
                 let newState = element as! Attributes.ContentState
                 print("New state is \(newState)")
+                activity?.update(newState.activityUpdate)
             }
 //            for try await mutation in ActivityMutations<Attributes>() {
 //                print("Mutation is \(mutation)")
