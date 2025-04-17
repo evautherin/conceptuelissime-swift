@@ -40,7 +40,7 @@ extension ActivityLifeCycle {
     
     private enum State {
         case initial
-        case mutations(Task<Void, Error>)
+        case updates(Task<Void, Error>)
         case completed
     }
     
@@ -64,13 +64,13 @@ extension ActivityLifeCycle {
             .reductions(into: State.initial) { (state, action) in
                 print("Action is \(action)")
                 switch (state, action) {
-                case (.initial, .stop), (.mutations(_), .run), (.completed, _):
+                case (.initial, .stop), (.updates(_), .run), (.completed, _):
                     break
                     
                 case (.initial, .run):
-                    state = await self.mutationsState
+                    state = await self.updatesState
                     
-                case (.mutations(let task), .stop):
+                case (.updates(let task), .stop):
                     task.cancel()
                     state = .completed
                 }
@@ -85,15 +85,16 @@ extension ActivityLifeCycle {
         }
     }
     
-    private var mutationsState: State {
-        .mutations(Task {
-            print("Mutations task started")
-            for try await mutation in CLLocationUpdate.liveUpdates() {
-                print("Location is \(mutation)")
+    private var updatesState: State {
+        .updates(Task {
+            print("Updates task started")
+            for try await element in Attributes.ContentState.liveUpdates() {
+                let newState = element as! Attributes.ContentState
+                print("New state is \(newState)")
             }
 //            for try await mutation in ActivityMutations<Attributes>() {
 //                print("Mutation is \(mutation)")
-//                activity?.mutate(mutation)
+//                activity?.update(mutation)
 //            }
         })
     }
@@ -104,15 +105,15 @@ extension Activity
     Attributes.ContentState: ActivityLiveState,
     Attributes.ContentState: ActivityInitialState
 {
-    func mutate(
+    func update(
         isolation: isolated (any Actor)? = #isolation,
-        _ mutation: Attributes.ContentState.Mutation
+        _ activityUpdate: Attributes.ContentState.ActivityUpdate
     ) {
         Task {
             // https://forums.swift.org/t/distinction-between-isolated-any-and-inheritactorcontext/75730/10
             _ = isolation // a capture affects the static isolation
             
-            let (content, alert, timestamp) = mutation
+            let (content, alert, timestamp) = activityUpdate
             switch timestamp {
             case .none:
                 print("Update without timestamp")

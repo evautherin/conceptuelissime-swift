@@ -20,14 +20,14 @@ public struct ActivityMutations<Attributes>: SendableAsyncSequence
     let stateUpdates = State.liveUpdates()
     
     public struct AsyncIterator: AsyncIteratorProtocol {
-        public typealias Element = Content.Mutation
+        public typealias Element = Content.ActivityUpdate
         public typealias Failure = Error
         
         var stateIterator: any AsyncIteratorProtocol
         
         mutating public func next() async throws -> Element? {
             print("Waiting for next mutation...")
-           let mutation = try await (stateIterator.next() as? State)?.activityMutation
+           let mutation = try await (stateIterator.next() as? State)?.activityUpdate
             print("next mutation is \(mutation.debugDescription)")
             return mutation
         }
