@@ -50,7 +50,11 @@ public actor AsyncScenePhase {
 
 public struct ScenePhaseWindowGroup<Content: View>: Scene {
     @Environment(\.scenePhase) private var scenePhase
-    @ViewBuilder public let content: Content
+    @ViewBuilder let content: Content
+    
+    public init(content: Content) {
+        self.content = content
+    }
     
     public var body: some Scene {
         WindowGroup {
