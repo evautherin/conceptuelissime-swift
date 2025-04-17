@@ -6,7 +6,7 @@
 //
 
 
-public protocol ActivityLiveState: ActivityState {
+public protocol ActivityLiveState: ActivityContentState {
     static func liveUpdates() -> any SendableAsyncSequence // with Element == Self
 }
 

@@ -6,16 +6,26 @@
 //
 
 import CoreLocation
+import SwiftUI
 import AsyncAlgorithms
 
 
 public enum AlwaysLocationUpdate {
+    private static var phases: AsyncMapSequence<some AsyncSequence, ScenePhase> {
+        let currentPhase = AsyncScenePhase.scenePhase
+        let prefixSequence = [currentPhase].async.compacted()
+        
+        return chain(prefixSequence, AsyncScenePhase.phases())
+            .map { $0 }
+    }
+    
     static func sessions(
     ) -> AsyncExclusiveReductionsSequence<some SendableAsyncSequence, CLServiceSession?>
     {
-        AsyncScenePhase.phases()
+        phases
             .map { phase in
-                switch phase {
+                print("Phase: \(phase)")
+                return switch phase {
                 case .background: CLServiceSession(authorization: .always)
                 default: CLServiceSession?.none
                 }

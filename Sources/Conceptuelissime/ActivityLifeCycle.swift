@@ -14,6 +14,7 @@ public actor ActivityLifeCycle<Attributes>
   where
     Attributes: Sendable,
     Attributes: ActivityAttributes,
+    Attributes.ContentState: UpdateConstructor,
     Attributes.ContentState: ActivityLiveState,
     Attributes.ContentState: ActivityInitialState
 {
