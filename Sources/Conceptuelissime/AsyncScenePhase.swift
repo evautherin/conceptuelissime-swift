@@ -52,7 +52,7 @@ public struct ScenePhaseWindowGroup<Content: View>: Scene {
     @Environment(\.scenePhase) private var scenePhase
     let content: Content
     
-    init(@ViewBuilder content: () -> Content) {
+    public init(@ViewBuilder content: () -> Content) {
         self.content = content()
     }
 
