@@ -20,20 +20,26 @@ public actor ActivityLifeCycle<Attributes>
 {
     private var activity: Activity<Attributes>?
     
-    private init(_ attributes: Attributes) async throws {
+    private init(_ attributes: Attributes) throws {
         let activity = try Activity.request(
             attributes: attributes,
             content: Attributes.ContentState.initialState.activityContent,
             pushType: nil
         )
         self.activity = activity
-        print("Activity is \(activity)")
     }
     
-    public static func proceed(_ attributes: Attributes) async throws {
-        let lifeCycle = try await ActivityLifeCycle(attributes)
-        print("Life cycle is \(lifeCycle)")
-        try await lifeCycle.complete()
+    public static func proceed(_ attributes: Attributes) throws {
+        let lifeCycle = try ActivityLifeCycle(attributes)
+
+        Task {
+            do {
+                try await lifeCycle.complete()
+                print("ActivityLifeCycle proceed finished")
+            } catch {
+                print(error.localizedDescription)
+            }
+        }
     }
 }
 
@@ -94,13 +100,12 @@ extension ActivityLifeCycle {
                 print("New state is \(newState)")
                 activity?.update(newState.activityUpdate)
             }
-//            for try await mutation in ActivityMutations<Attributes>() {
-//                print("Mutation is \(mutation)")
-//                activity?.update(mutation)
-//            }
         })
     }
 }
+
+// https://forums.swift.org/t/distinction-between-isolated-any-and-inheritactorcontext/75730/10
+// _ = isolation // a capture affects the static isolation
 
 extension Activity
   where
@@ -112,8 +117,7 @@ extension Activity
         _ activityUpdate: Attributes.ContentState.ActivityUpdate
     ) {
         Task {
-            // https://forums.swift.org/t/distinction-between-isolated-any-and-inheritactorcontext/75730/10
-            _ = isolation // a capture affects the static isolation
+            guard let isolation else { return }
             
             let (content, alert, timestamp) = activityUpdate
             switch timestamp {
