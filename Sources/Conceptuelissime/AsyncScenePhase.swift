@@ -43,7 +43,7 @@ public actor AsyncScenePhase {
     }
     
     public typealias Phases = AsyncMapSequence<Changes, ScenePhase>
-    public static func phases() -> Phases {
+    public static func scenePhases() -> Phases {
         changes().map(\.1)
     }
 }

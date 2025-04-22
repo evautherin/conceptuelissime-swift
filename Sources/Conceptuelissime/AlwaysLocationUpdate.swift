@@ -11,18 +11,18 @@ import AsyncAlgorithms
 
 
 public enum AlwaysLocationUpdate {
-    private static var phases: AsyncMapSequence<some AsyncSequence, ScenePhase> {
+    private static var scenePhases: AsyncMapSequence<some AsyncSequence, ScenePhase> {
         let currentPhase = AsyncScenePhase.scenePhase
-        let prefixSequence = [currentPhase].async.compacted()
+        let sequenceOfCurrentPhase = CollectionOfOne(currentPhase).async.compacted()
         
-        return chain(prefixSequence, AsyncScenePhase.phases())
+        return chain(sequenceOfCurrentPhase, AsyncScenePhase.scenePhases())
             .map { $0 }
     }
     
     static func sessions(
     ) -> AsyncExclusiveReductionsSequence<some SendableAsyncSequence, CLServiceSession?>
     {
-        phases
+        scenePhases
             .map { phase in
                 print("Phase: \(phase)")
                 return switch phase {
