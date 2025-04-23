@@ -19,20 +19,41 @@ public enum AlwaysLocationUpdate {
             .map { $0 }
     }
     
-    static func sessions(
-    ) -> AsyncExclusiveReductionsSequence<some SendableAsyncSequence, CLServiceSession?>
-    {
+    private enum Action {
+        case enterBackground
+        case exitBackground
+    }
+    
+    private enum State {
+        case noSession
+        case session(CLServiceSession)
+    }
+    
+    private static func sessions(
+    ) -> AsyncExclusiveReductionsSequence<some SendableAsyncSequence, State> {
         scenePhases
-            .map { phase in
+            .map { phase -> Action in
                 print("Phase: \(phase)")
                 return switch phase {
-                case .background: CLServiceSession(authorization: .always)
-                default: CLServiceSession?.none
+                case .background: .enterBackground
+                default: .exitBackground
                 }
             }
-            .reductions(CLServiceSession?.none) { (previousSession, session) in
-                previousSession?.invalidate()
-                return session
+            .reductions(into: State.noSession) { (state, action) in
+                switch (state, action) {
+                case (.noSession, .exitBackground), (.session, .enterBackground):
+                    print("State unchanged")
+                    break
+                    
+                case (.noSession, .enterBackground):
+                    print("Session created")
+                    state = .session(CLServiceSession(authorization: .always))
+                    
+                case (.session(let session), .exitBackground):
+                    print("Session invalidated")
+                    session.invalidate()
+                    state = .noSession
+                }
             }
     }
     
