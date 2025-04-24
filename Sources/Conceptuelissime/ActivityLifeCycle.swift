@@ -117,7 +117,7 @@ extension Activity
         _ activityUpdate: Attributes.ContentState.ActivityUpdate
     ) {
         Task {
-            guard let isolation else { return }
+            _ = isolation
             
             let (content, alert, timestamp) = activityUpdate
             switch timestamp {

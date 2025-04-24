@@ -19,18 +19,23 @@ public enum AlwaysLocationUpdate {
             .map { $0 }
     }
     
-    private enum Action {
+    enum Action {
         case enterBackground
         case exitBackground
     }
     
-    private enum State {
+    enum State {
         case noSession
         case session(CLServiceSession)
     }
     
-    private static func sessions(
-    ) -> AsyncExclusiveReductionsSequence<some SendableAsyncSequence, State> {
+    static func sessions<Phases>(
+        _ scenePhases: Phases
+    ) -> AsyncExclusiveReductionsSequence<some SendableAsyncSequence, State>
+      where
+        Phases: SendableAsyncSequence,
+        Phases.Element == ScenePhase
+    {
         scenePhases
             .map { phase -> Action in
                 print("Phase: \(phase)")
@@ -49,9 +54,9 @@ public enum AlwaysLocationUpdate {
                     print("Session created")
                     state = .session(CLServiceSession(authorization: .always))
                     
-                case (.session(let session), .exitBackground):
+                case (.session, .exitBackground):
                     print("Session invalidated")
-                    session.invalidate()
+//                    session.invalidate()
                     state = .noSession
                 }
             }
@@ -59,7 +64,7 @@ public enum AlwaysLocationUpdate {
     
     public static func liveUpdates(
     ) -> AsyncMapSequence<some AsyncSequence, CLLocationUpdate> {
-        combineLatest(CLLocationUpdate.liveUpdates(), sessions())
+        combineLatest(CLLocationUpdate.liveUpdates(), sessions(scenePhases))
             .map(\.0)
     }
 }
