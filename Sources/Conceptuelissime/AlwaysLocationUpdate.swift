@@ -11,14 +11,6 @@ import AsyncAlgorithms
 
 
 public enum AlwaysLocationUpdate {
-    private static var scenePhases: AsyncMapSequence<some AsyncSequence, ScenePhase> {
-        let currentPhase = AsyncScenePhase.scenePhase
-        let sequenceOfCurrentPhase = CollectionOfOne(currentPhase).async.compacted()
-        
-        return chain(sequenceOfCurrentPhase, AsyncScenePhase.scenePhases())
-            .map { $0 }
-    }
-    
     enum Action {
         case enterBackground
         case exitBackground
@@ -29,14 +21,16 @@ public enum AlwaysLocationUpdate {
         case session(CLServiceSession)
     }
     
-    static func sessions<Phases>(
-        _ scenePhases: Phases
-    ) -> AsyncExclusiveReductionsSequence<some SendableAsyncSequence, State>
-      where
-        Phases: SendableAsyncSequence,
-        Phases.Element == ScenePhase
-    {
-        scenePhases
+    static func scenePhases() -> AsyncMapSequence<some AsyncSequence, ScenePhase> {
+        let currentPhase = AsyncScenePhase.scenePhase
+        let sequenceOfCurrentPhase = CollectionOfOne(currentPhase).async.compacted()
+        
+        return chain(sequenceOfCurrentPhase, AsyncScenePhase.scenePhases())
+            .map { $0 }
+    }
+
+    static func actions() -> AsyncMapSequence<some AsyncSequence, Action> {
+        scenePhases()
             .map { phase -> Action in
                 print("Phase: \(phase)")
                 return switch phase {
@@ -44,27 +38,33 @@ public enum AlwaysLocationUpdate {
                 default: .exitBackground
                 }
             }
-            .reductions(into: State.noSession) { (state, action) in
-                switch (state, action) {
-                case (.noSession, .exitBackground), (.session, .enterBackground):
-                    print("State unchanged")
-                    break
-                    
-                case (.noSession, .enterBackground):
-                    print("Session created")
-                    state = .session(CLServiceSession(authorization: .always))
-                    
-                case (.session, .exitBackground):
-                    print("Session invalidated")
-//                    session.invalidate()
-                    state = .noSession
-                }
-            }
     }
     
+    static func reducer(state: inout State, action: Action) async {
+        switch (state, action) {
+        case (.noSession, .exitBackground), (.session, .enterBackground):
+            print("State unchanged")
+            break
+            
+        case (.noSession, .enterBackground):
+            print("Session created")
+            state = .session(CLServiceSession(authorization: .always))
+            
+        case (.session, .exitBackground):
+            print("Session invalidated")
+            state = .noSession
+        }
+    }
+    
+    static func states(
+        initial initialState: State,
+    ) -> AsyncExclusiveReductionsSequence<some SendableAsyncSequence, State> {
+        actions().reductions(into: initialState, reducer)
+    }
+
     public static func liveUpdates(
     ) -> AsyncMapSequence<some AsyncSequence, CLLocationUpdate> {
-        combineLatest(CLLocationUpdate.liveUpdates(), sessions(scenePhases))
+        combineLatest(CLLocationUpdate.liveUpdates(), states(initial: .noSession))
             .map(\.0)
     }
 }

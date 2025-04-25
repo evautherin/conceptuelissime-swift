@@ -8,6 +8,7 @@
 import Foundation
 import ActivityKit
 import CoreLocation
+import AsyncAlgorithms
 
 
 public actor ActivityLifeCycle<Attributes>
@@ -29,6 +30,19 @@ public actor ActivityLifeCycle<Attributes>
         self.activity = activity
     }
     
+    private func complete() async throws {
+        guard let activity else { return }
+        
+        let cycleStates = states(activity.activityStateUpdates)
+        waitingCompletion: for try await state in cycleStates {
+            print("Cycle state is \(state)")
+            switch state {
+            case .completed: break waitingCompletion
+            default: break
+            }
+        }
+    }
+    
     public static func proceed(_ attributes: Attributes) throws {
         let lifeCycle = try ActivityLifeCycle(attributes)
 
@@ -45,51 +59,15 @@ public actor ActivityLifeCycle<Attributes>
 
 extension ActivityLifeCycle {
     
-    private enum State {
+    enum State {
         case initial
         case updates(Task<Void, Error>)
         case completed
     }
     
-    private enum Action {
+    enum Action {
         case stop
         case run
-    }
-
-    private func complete() async throws {
-        guard let activity else { return }
-        
-        let cycleStates = activity.activityStateUpdates
-            .map { observedState -> Action in
-                print("Observed state is \(observedState)")
-                return switch observedState {
-                case .active, .stale: .run
-                case .ended, .dismissed: .stop
-                @unknown default: .stop
-                }
-            }
-            .reductions(into: State.initial) { (state, action) in
-                print("Action is \(action)")
-                switch (state, action) {
-                case (.initial, .stop), (.updates(_), .run), (.completed, _):
-                    break
-                    
-                case (.initial, .run):
-                    state = await self.updatesState
-                    
-                case (.updates(let task), .stop):
-                    task.cancel()
-                    state = .completed
-                }
-            }
-        
-        waitingCompletion: for await state in cycleStates {
-            print("Cycle state is \(state)")
-            switch state {
-            case .completed: break waitingCompletion
-            default: break
-            }
-        }
     }
     
     private var updatesState: State {
@@ -101,6 +79,50 @@ extension ActivityLifeCycle {
                 activity?.update(newState.activityUpdate)
             }
         })
+    }
+    
+    static func actions<StatesUpdates>(
+        _ activityStateUpdates: StatesUpdates
+    ) -> AsyncMapSequence<some AsyncSequence, Action>
+    where
+      StatesUpdates: AsyncSequence,
+      StatesUpdates.Element == ActivityState
+    {
+        activityStateUpdates
+            .map { observedState -> Action in
+                print("Observed state is \(observedState)")
+                return switch observedState {
+                case .active, .stale: .run
+                case .ended, .dismissed: .stop
+                @unknown default: .stop
+                }
+            }
+    }
+    
+    func reducer(state: inout State, action: Action) async {
+        print("Action is \(action)")
+        switch (state, action) {
+        case (.initial, .stop), (.updates(_), .run), (.completed, _):
+            break
+            
+        case (.initial, .run):
+            state = updatesState
+            
+        case (.updates(let task), .stop):
+            task.cancel()
+            state = .completed
+        }
+    }
+    
+    func states<StateUpdates>(
+        _ activityStateUpdates: StateUpdates
+    ) -> AsyncExclusiveReductionsSequence<some SendableAsyncSequence, State>
+    where
+      StateUpdates: AsyncSequence,
+      StateUpdates.Element == ActivityState
+    {
+        Self.actions(activityStateUpdates)
+            .reductions(into: .initial, reducer)
     }
 }
 

@@ -21,3 +21,4 @@ extension AsyncStream: SendableAsyncSequence { }
 extension AsyncSyncSequence: SendableAsyncSequence { }
 extension AsyncCombineLatest2Sequence: SendableAsyncSequence { }
 extension AsyncExclusiveReductionsSequence: SendableAsyncSequence { }
+extension AsyncChain2Sequence: SendableAsyncSequence { }
