@@ -70,16 +70,16 @@ extension ActivityLifeCycle {
         case run
     }
     
-    private var updatesState: State {
-        .updates(Task {
-            print("Updates task started")
-            for try await element in Attributes.ContentState.liveUpdates() {
-                let newState = element as! Attributes.ContentState
-                print("New state is \(newState)")
-                activity?.update(newState.activityUpdate)
-            }
-        })
-    }
+//    private var updatesState: State {
+//        .updates(Task {
+//            print("Updates task started")
+//            for try await element in Attributes.ContentState.liveUpdates() {
+//                let newState = element as! Attributes.ContentState
+//                print("New state is \(newState)")
+//                activity?.update(newState.activityUpdate)
+//            }
+//        })
+//    }
     
     static func actions<StatesUpdates>(
         _ activityStateUpdates: StatesUpdates
@@ -100,13 +100,25 @@ extension ActivityLifeCycle {
     }
     
     func reducer(state: inout State, action: Action) async {
+        
+        func updateTask() -> Task<(), Error> {
+            Task {
+                print("Updates task started")
+                for try await element in Attributes.ContentState.liveUpdates() {
+                    let newState = element as! Attributes.ContentState
+                    print("New state is \(newState)")
+                    activity?.update(newState.activityUpdate)
+                }
+            }
+        }
+        
         print("Action is \(action)")
         switch (state, action) {
         case (.initial, .stop), (.updates(_), .run), (.completed, _):
             break
             
         case (.initial, .run):
-            state = updatesState
+            state = .updates(updateTask()) // updatesState
             
         case (.updates(let task), .stop):
             task.cancel()

@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import AsyncAlgorithms
+
 
 /// Example:
 /// ```swift
@@ -42,9 +44,18 @@ public actor AsyncScenePhase {
         }
     }
     
-    public typealias Phases = AsyncMapSequence<Changes, ScenePhase>
-    public static func scenePhases() -> Phases {
+    public typealias NextPhases = AsyncMapSequence<Changes, ScenePhase>
+    public static func nextScenePhases() -> NextPhases {
         changes().map(\.1)
+    }
+    
+    typealias CurrentPhase = AsyncSyncSequence<CollectionOfOne<ScenePhase?>>
+    typealias CompactedPhase = AsyncCompactedSequence<CurrentPhase, ScenePhase>
+    typealias Phases = AsyncChain2Sequence<CompactedPhase, NextPhases>
+    static func scenePhases() -> Phases {
+        let sequenceOfCurrentPhase = CollectionOfOne(scenePhase).async.compacted()
+        
+        return chain(sequenceOfCurrentPhase, nextScenePhases())
     }
 }
 

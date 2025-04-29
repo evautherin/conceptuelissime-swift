@@ -21,16 +21,8 @@ public enum AlwaysLocationUpdate {
         case session(CLServiceSession)
     }
     
-    static func scenePhases() -> AsyncMapSequence<some AsyncSequence, ScenePhase> {
-        let currentPhase = AsyncScenePhase.scenePhase
-        let sequenceOfCurrentPhase = CollectionOfOne(currentPhase).async.compacted()
-        
-        return chain(sequenceOfCurrentPhase, AsyncScenePhase.scenePhases())
-            .map { $0 }
-    }
-
     static func actions() -> AsyncMapSequence<some AsyncSequence, Action> {
-        scenePhases()
+        AsyncScenePhase.scenePhases()
             .map { phase -> Action in
                 print("Phase: \(phase)")
                 return switch phase {
